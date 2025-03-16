@@ -22,7 +22,7 @@ log/
 dist/
 build/
 out/
-uploads/
+/uploads
 
 # Database and cache files
 *.sqlite
