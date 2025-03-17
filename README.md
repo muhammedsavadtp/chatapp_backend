@@ -41,7 +41,7 @@ Create a `.env` file in the project root and add the following:
 ```env
 # Development Mode
 NODE_ENV="development"
-NEXT_PUBLIC_API_URL=http://172.20.10.5:5000
+NEXT_PUBLIC_API_URL=http://localhost:5000
 ```
 
 ### Run the Server
