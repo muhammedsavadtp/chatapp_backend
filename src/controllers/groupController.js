@@ -182,3 +182,24 @@ exports.addGroupAdmin = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+exports.markGroupMessagesRead = async (req, res) => {
+  const { groupId } = req.params;
+  const userId = req.user.id;
+  try {
+    await Message.updateMany(
+      { group: groupId, readBy: { $ne: userId } },
+      { $addToSet: { readBy: userId } }
+    );
+    const messages = await Message.find({ group: groupId })
+      .populate('sender', 'username name profilePicture status lastSeen');
+    const io = req.app.get('io');
+    if (io) {
+      io.to(groupId).emit('groupMessagesRead', { groupId, userId, messages });
+    }
+    res.json({ message: 'Group messages marked as read' });
+  } catch (error) {
+    console.error('Error marking group messages as read:', error);
+    res.status(500).json({ error: error.message });
+  }
+};

@@ -59,121 +59,96 @@ exports.uploadFile = async (req, res) => {
 
 exports.getUserChats = async (req, res) => {
   try {
-    const currentUser = await User.findById(req.user.id).populate(
-      "contacts",
-      "username name profilePicture status lastSeen"
-    );
+    const currentUser = await User.findById(req.user.id)
+      .populate('contacts', 'username name profilePicture status lastSeen');
 
     if (!currentUser) {
-      return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: 'User not found' });
     }
 
-    const groups = await Group.find({ members: req.user.id }).populate(
-      "members",
-      "username name profilePicture status lastSeen"
-    );
+    const groups = await Group.find({ members: req.user.id })
+      .populate('members', 'username name profilePicture status lastSeen');
 
     const messages = await Message.find({
       $or: [
         { sender: req.user.id },
         { recipient: req.user.id },
-        { group: { $in: groups.map((g) => g._id) } },
+        { group: { $in: groups.map(g => g._id) } },
       ],
     })
-      .populate("sender", "username name profilePicture status lastSeen")
-      .populate("recipient", "username name profilePicture status lastSeen")
+      .populate('sender', 'username name profilePicture status lastSeen')
+      .populate('recipient', 'username name profilePicture status lastSeen')
       .sort({ timestamp: -1 });
 
     const chats = {};
 
     // Map personal chats
     if (currentUser.contacts) {
-      currentUser.contacts.forEach((contact) => {
+      currentUser.contacts.forEach(contact => {
         const contactId = contact._id.toString();
-        const latestMessage = messages.find(
-          (msg) =>
-            msg.sender &&
-            msg.recipient &&
-            ((msg.sender._id.toString() === contactId &&
-              msg.recipient._id.toString() === req.user.id) ||
-              (msg.recipient._id.toString() === contactId &&
-                msg.sender._id.toString() === req.user.id))
+        const latestMessage = messages.find(msg =>
+          msg.sender && msg.recipient && (
+            (msg.sender._id.toString() === contactId && msg.recipient._id.toString() === req.user.id) ||
+            (msg.recipient._id.toString() === contactId && msg.sender._id.toString() === req.user.id)
+          )
         );
-        const unreadCount = messages.filter(
-          (m) =>
-            m.recipient?._id?.toString() === req.user.id &&
-            m.sender?._id?.toString() === contactId &&
-            !m.read
+        const unreadCount = messages.filter(m =>
+          m.recipient?._id?.toString() === req.user.id &&
+          m.sender?._id?.toString() === contactId &&
+          !m.read
         ).length;
 
         chats[contactId] = {
           id: contactId,
-          name: contact.name || contact.username || "Unknown",
-          avatar: contact.profilePicture || "/api/placeholder/40/40",
-          status: contact.status || "offline",
-          lastSeen: contact.lastSeen
-            ? new Date(contact.lastSeen).toISOString()
-            : undefined,
-          lastMessage: latestMessage
-            ? latestMessage.content || (latestMessage.fileUrl ? "File" : "")
-            : "No messages yet",
-          time: latestMessage
-            ? latestMessage.timestamp.toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })
-            : "",
+          name: contact.name || contact.username || 'Unknown',
+          avatar: contact.profilePicture || '/api/placeholder/40/40',
+          status: contact.status || 'offline',
+          lastSeen: contact.lastSeen ? new Date(contact.lastSeen).toISOString() : undefined,
+          lastMessage: latestMessage ? (latestMessage.content || (latestMessage.fileUrl ? 'File' : '')) : '',
+          time: latestMessage ? latestMessage.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
           unread: unreadCount,
-          type: "personal",
+          type: 'personal',
         };
       });
     }
 
     // Map group chats
-    groups.forEach((group) => {
+    groups.forEach(group => {
       const groupId = group._id.toString();
-      const latestMessage = messages.find(
-        (msg) => msg.group && msg.group._id.toString() === groupId
+      const latestMessage = messages.find(msg =>
+        msg.group && msg.group._id.toString() === groupId
       );
-      const unreadCount = messages.filter(
-        (m) =>
-          m.group?._id?.toString() === groupId &&
-          m.recipient?._id?.toString() !== req.user.id &&
-          !m.read
+      const unreadCount = messages.filter(m =>
+        m.group?._id?.toString() === groupId &&
+        !m.readBy.includes(req.user.id) &&
+        m.sender._id.toString() !== req.user.id // Exclude own messages
       ).length;
 
       chats[groupId] = {
         id: groupId,
-        name: group.name || "Unnamed Group",
-        avatar: group.avatar || "/api/placeholder/40/40",
-        status: "group",
+        name: group.name || 'Unnamed Group',
+        avatar: group.avatar || '/api/placeholder/40/40',
+        status: 'group',
         lastSeen: undefined,
-        lastMessage: latestMessage
-          ? latestMessage.content || (latestMessage.fileUrl ? "File" : "")
-          : "No messages yet",
-        time: latestMessage
-          ? latestMessage.timestamp.toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })
-          : "",
+        lastMessage: latestMessage ? (latestMessage.content || (latestMessage.fileUrl ? 'File' : '')) : '',
+        time: latestMessage ? latestMessage.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
         unread: unreadCount,
-        type: "group",
-        members: group.members.map((member) => ({
+        type: 'group',
+        members: group.members.map(member => ({
           _id: member._id.toString(),
-          name: member.name || member.username || "Unknown",
-          avatar: member.profilePicture || "/api/placeholder/40/40",
-          status: member.status || "offline",
-          lastSeen: member.lastSeen
-            ? new Date(member.lastSeen).toISOString()
-            : undefined,
+          name: member.name || member.username || 'Unknown',
+          avatar: member.profilePicture || '/api/placeholder/40/40',
+          status: member.status || 'offline',
+          lastSeen: member.lastSeen ? new Date(member.lastSeen).toISOString() : undefined,
         })),
+        admins: group.admins.map(a => a.toString()),
+        createdBy: group.createdBy.toString(),
       };
     });
 
     res.json(Object.values(chats));
   } catch (error) {
-    console.error("Error in getUserChats:", error);
+    console.error('Error in getUserChats:', error);
     res.status(500).json({ error: error.message });
   }
 };
