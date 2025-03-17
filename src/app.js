@@ -33,20 +33,19 @@ const User = require('./models/User');
 const onlineUsers = new Map();
 
 io.on('connection', (socket) => {
-    console.log('User connected:', socket.id);
-
+    // console.log('User connected:', socket.id);
     socket.on('join', async (userId) => {
         socket.userId = userId;
         socket.join(userId);
         onlineUsers.set(userId, socket.id);
         await User.findByIdAndUpdate(userId, { status: 'online' });
         io.emit('userStatus', { userId, status: 'online' });
-        console.log(`User ${userId} joined personal room`);
+        // console.log(`User ${userId} joined personal room`);
     });
 
     socket.on('joinGroup', (groupId) => {
         socket.join(groupId);
-        console.log(`User ${socket.userId} joined group ${groupId}`);
+        // console.log(`User ${socket.userId} joined group ${groupId}`);
     });
 
     socket.on('sendMessage', async ({ recipientId, content, fileUrl }) => {
@@ -123,7 +122,7 @@ io.on('connection', (socket) => {
             });
             io.emit('userStatus', { userId: socket.userId, status: 'offline' });
         }
-        console.log('User disconnected:', socket.id);
+        // console.log('User disconnected:', socket.id);
     });
 });
 
