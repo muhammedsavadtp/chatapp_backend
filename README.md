@@ -49,7 +49,7 @@ NEXT_PUBLIC_API_URL=http://172.20.10.5:5000
 npm start  # Start the server
 ```
 
-## API Endpoints
+<!-- ## API Endpoints
 
 ### Authentication
 - `POST /api/auth/signup` - Register a new user
@@ -66,7 +66,7 @@ npm start  # Start the server
 ### Group Chat
 - `POST /api/groups` - Create a new group
 - `PUT /api/groups/:id` - Update group details
-- `DELETE /api/groups/:id` - Delete a group
+- `DELETE /api/groups/:id` - Delete a group -->
 
 ## Notes
 - Ensure MongoDB is running before starting the backend.
