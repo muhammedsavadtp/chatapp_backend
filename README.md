@@ -40,8 +40,10 @@ npm install
 Create a `.env` file in the project root and add the following:
 ```env
 # Development Mode
-NODE_ENV="development"
-NEXT_PUBLIC_API_URL=http://localhost:5000
+PORT=5000
+MONGO_URI=mongodb://localhost:27017/chat-app
+JWT_SECRET=<JWT_SECRET_TOKEN> 
+
 ```
 
 ### Run the Server
